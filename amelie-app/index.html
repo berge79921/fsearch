@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amelies Katzen-Übersetzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #ff7eb6;
+    --pink-dark: #e85a98;
+    --lila: #9b7bff;
+    --bg1: #fff3f8;
+    --bg2: #eef0ff;
+    --text: #4a3a5c;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Fredoka", system-ui, sans-serif;
+    color: var(--text);
+    background: linear-gradient(160deg, var(--bg1), var(--bg2));
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 48px;
+  }
+  main { width: 100%; max-width: 520px; text-align: center; }
+  h1 { font-size: 2rem; margin: 0 0 4px; }
+  .sub { margin: 0 0 20px; opacity: .75; font-size: 1.05rem; }
+
+  .cat-wrap { position: relative; height: 170px; margin-bottom: 8px; }
+  .cat { width: 160px; height: 160px; transition: transform .2s; }
+  .cat.talk { animation: bounce .25s ease-in-out infinite alternate; }
+  .cat .mouth-open { display: none; }
+  .cat.talk .mouth-open { display: inline; }
+  .cat.talk .mouth-closed { display: none; }
+  @keyframes bounce { from { transform: translateY(0) rotate(-2deg); } to { transform: translateY(-6px) rotate(2deg); } }
+
+  .bubble {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 18px 20px;
+    min-height: 64px;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--pink-dark);
+    box-shadow: 0 6px 20px rgba(155, 123, 255, .15);
+    position: relative;
+    margin-bottom: 12px;
+    word-wrap: break-word;
+  }
+  .bubble::before {
+    content: ""; position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    border: 14px solid transparent; border-top: 0; border-bottom-color: var(--card);
+  }
+  .bubble.empty { color: #b9acc9; font-weight: 500; font-size: 1.1rem; }
+  .said { font-size: .95rem; opacity: .7; margin: -4px 0 12px; min-height: 1.2em; }
+
+  .mic {
+    width: 120px; height: 120px; border-radius: 50%; border: none;
+    background: var(--pink); color: white; font-size: 3rem; cursor: pointer;
+    box-shadow: 0 8px 0 var(--pink-dark), 0 12px 24px rgba(232, 90, 152, .35);
+    transition: transform .1s, box-shadow .1s;
+    margin: 8px auto 6px; display: block;
+  }
+  .mic:active { transform: translateY(4px); box-shadow: 0 4px 0 var(--pink-dark); }
+  .mic.listening { background: #ff4d6d; animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 8px 0 #c9304f, 0 0 0 0 rgba(255,77,109,.5); } 50% { box-shadow: 0 8px 0 #c9304f, 0 0 0 18px rgba(255,77,109,0); } }
+  .mic-label { font-size: 1.05rem; margin-bottom: 18px; min-height: 1.4em; }
+
+  .row { display: flex; gap: 8px; margin-bottom: 12px; }
+  input[type=text] {
+    flex: 1; min-width: 0; font: inherit; font-size: 1.1rem; padding: 12px 14px;
+    border-radius: 16px; border: 2px solid #e4dcf3; background: white; color: var(--text);
+  }
+  input[type=text]:focus { outline: none; border-color: var(--lila); }
+  button.btn {
+    font: inherit; font-size: 1.05rem; font-weight: 600; border: none; cursor: pointer;
+    border-radius: 16px; padding: 12px 16px; background: var(--lila); color: white;
+  }
+  button.btn:active { transform: translateY(2px); }
+  button.btn.soft { background: white; color: var(--lila); border: 2px solid #e4dcf3; }
+
+  .section-title { font-weight: 600; margin: 18px 0 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip {
+    font: inherit; font-size: 1rem; border: 2px solid #e4dcf3; background: white; color: var(--text);
+    border-radius: 999px; padding: 8px 14px; cursor: pointer;
+  }
+  .chip.on { background: var(--pink); border-color: var(--pink); color: white; }
+  .tip { margin-top: 24px; font-size: .95rem; opacity: .7; line-height: 1.4; }
+  .note { font-size: .95rem; color: #a0608a; margin: 0 0 14px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🐾 Katzen-Übersetzer</h1>
+  <p class="sub">von Amelie</p>
+
+  <div class="cat-wrap">
+    <svg class="cat" id="cat" viewBox="0 0 200 200" aria-hidden="true">
+      <!-- Ohren -->
+      <path d="M40 80 L52 22 L92 58 Z" fill="#ffb26b"/>
+      <path d="M160 80 L148 22 L108 58 Z" fill="#ffb26b"/>
+      <path d="M50 70 L57 36 L82 58 Z" fill="#ffd1e3"/>
+      <path d="M150 70 L143 36 L118 58 Z" fill="#ffd1e3"/>
+      <!-- Kopf -->
+      <ellipse cx="100" cy="112" rx="72" ry="64" fill="#ffb26b"/>
+      <!-- Streifen -->
+      <path d="M100 50 L100 70 M84 52 L88 70 M116 52 L112 70" stroke="#f08f3c" stroke-width="6" stroke-linecap="round"/>
+      <!-- Augen -->
+      <ellipse cx="74" cy="104" rx="11" ry="14" fill="#4a3a5c"/>
+      <ellipse cx="126" cy="104" rx="11" ry="14" fill="#4a3a5c"/>
+      <circle cx="78" cy="99" r="4" fill="white"/>
+      <circle cx="130" cy="99" r="4" fill="white"/>
+      <!-- Bäckchen -->
+      <ellipse cx="58" cy="130" rx="10" ry="6" fill="#ff8fb8" opacity=".6"/>
+      <ellipse cx="142" cy="130" rx="10" ry="6" fill="#ff8fb8" opacity=".6"/>
+      <!-- Nase -->
+      <path d="M93 124 L107 124 L100 132 Z" fill="#ff7eb6"/>
+      <!-- Mund -->
+      <path class="mouth-closed" d="M100 132 Q92 142 84 136 M100 132 Q108 142 116 136" stroke="#4a3a5c" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g class="mouth-open">
+        <path d="M86 136 Q100 132 114 136 Q110 158 100 158 Q90 158 86 136 Z" fill="#7a2f4f"/>
+        <ellipse cx="100" cy="152" rx="7" ry="4" fill="#ff8fb8"/>
+      </g>
+      <!-- Schnurrhaare -->
+      <path d="M40 120 L70 126 M38 134 L70 132 M160 120 L130 126 M162 134 L130 132" stroke="#4a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <div class="bubble empty" id="bubble">Sag etwas, ich übersetze es! 😺</div>
+  <div class="said" id="said"></div>
+
+  <div id="micArea" hidden>
+    <button class="mic" id="mic" aria-label="Mikrofon">🎤</button>
+    <div class="mic-label" id="micLabel">Drück aufs Mikrofon und sprich!</div>
+  </div>
+  <p class="note" id="noMic" hidden>Das Mikrofon geht hier leider nicht (am besten in Chrome oder in der Claude-App auf dem Computer). Du kannst aber unten schreiben! ✏️</p>
+
+  <form class="row" id="form">
+    <input type="text" id="text" placeholder="…oder hier schreiben" autocomplete="off">
+    <button class="btn" type="submit">Miau! 🐾</button>
+  </form>
+  <button class="btn soft" id="again" hidden>🔊 Nochmal abspielen</button>
+
+  <div class="section-title">Schnell-Knöpfe</div>
+  <div class="chips" id="quick">
+    <button class="chip" data-say="Komm her!">🏃 Komm her!</button>
+    <button class="chip" data-say="Essen ist fertig!">🐟 Essen ist fertig!</button>
+    <button class="chip" data-say="Ich hab dich lieb">💖 Ich hab dich lieb</button>
+    <button class="chip" data-say="Hallo Katze!">👋 Hallo Katze!</button>
+    <button class="chip" data-say="Willst du spielen?">🧶 Willst du spielen?</button>
+  </div>
+
+  <div class="section-title">Katzenstimme</div>
+  <div class="chips" id="voices">
+    <button class="chip" data-voice="kitten">🐣 Kätzchen</button>
+    <button class="chip on" data-voice="cat">🐱 Katze</button>
+    <button class="chip" data-voice="tomcat">🦁 Großer Kater</button>
+  </div>
+
+  <p class="tip">Psst: Katzen verstehen keine echten Wörter, aber freundliche, hohe Miau-Töne finden viele Katzen spannend. Mit einem Leckerli klappt das „Komm her!“ noch besser 😉</p>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const cat = $("cat"), bubble = $("bubble"), said = $("said");
+  const mic = $("mic"), micLabel = $("micLabel"), textInput = $("text"), again = $("again");
+
+  // ---------- Ton ----------
+  let ctx = null, master = null;
+  function ensureAudio() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      const comp = ctx.createDynamicsCompressor();
+      master = ctx.createGain();
+      master.gain.value = 0.9;
+      master.connect(comp).connect(ctx.destination);
+    }
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    return ctx;
+  }
+
+  const VOICES = { kitten: 820, cat: 560, tomcat: 360 };
+  let voice = "cat";
+
+  function meow(t0, p) {
+    const d = p.dur;
+    const o = ctx.createOscillator();
+    o.type = "sawtooth";
+    const f = o.frequency;
+    f.setValueAtTime(p.f0 * 0.85, t0);
+    f.linearRampToValueAtTime(p.f0 * p.peak, t0 + d * 0.35);
+    f.linearRampToValueAtTime(p.f0 * p.end, t0 + d);
+
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 6.5;
+    const lg = ctx.createGain();
+    lg.gain.value = p.f0 * 0.025;
+    lfo.connect(lg).connect(f);
+
+    // Mund-Formen: m → i → a → u
+    const f1 = ctx.createBiquadFilter();
+    f1.type = "bandpass"; f1.Q.value = 4;
+    f1.frequency.setValueAtTime(600, t0);
+    f1.frequency.linearRampToValueAtTime(1500, t0 + d * 0.3);
+    f1.frequency.linearRampToValueAtTime(1100, t0 + d * 0.6);
+    f1.frequency.linearRampToValueAtTime(650, t0 + d);
+    const f2 = ctx.createBiquadFilter();
+    f2.type = "bandpass"; f2.Q.value = 6;
+    f2.frequency.setValueAtTime(1600, t0);
+    f2.frequency.linearRampToValueAtTime(3000, t0 + d * 0.3);
+    f2.frequency.linearRampToValueAtTime(1800, t0 + d * 0.6);
+    f2.frequency.linearRampToValueAtTime(1000, t0 + d);
+    const f2g = ctx.createGain(); f2g.gain.value = 0.6;
+
+    const g = ctx.createGain();
+    const v = p.vol;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(v, t0 + Math.min(0.06, d * 0.2));
+    g.gain.setValueAtTime(v * 0.9, t0 + d * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+
+    o.connect(f1).connect(g);
+    o.connect(f2).connect(f2g).connect(g);
+
+    // "rrr"-Rollen für Gurr-Laute
+    if (p.trill) {
+      const am = ctx.createGain();
+      am.gain.value = 0.6;
+      const tl = ctx.createOscillator();
+      tl.type = "square"; tl.frequency.value = 28;
+      const tg = ctx.createGain(); tg.gain.value = 0.4;
+      tl.connect(tg).connect(am.gain);
+      g.connect(am).connect(master);
+      tl.start(t0); tl.stop(t0 + d + 0.05);
+    } else {
+      g.connect(master);
+    }
+    o.start(t0); o.stop(t0 + d + 0.05);
+    lfo.start(t0); lfo.stop(t0 + d + 0.05);
+  }
+
+  let noiseBuf = null;
+  function purr(t0, dur) {
+    if (!noiseBuf) {
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuf; src.loop = true;
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.value = 320;
+    const am = ctx.createGain(); am.gain.value = 0.5;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 24;
+    const lg = ctx.createGain(); lg.gain.value = 0.5;
+    lfo.connect(lg).connect(am.gain);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(1.6, t0 + 0.2);
+    g.gain.setValueAtTime(1.6, t0 + dur - 0.3);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(lp).connect(am).connect(g).connect(master);
+    src.start(t0); src.stop(t0 + dur + 0.05);
+    lfo.start(t0); lfo.stop(t0 + dur + 0.05);
+  }
+
+  // ---------- Übersetzen ----------
+  function hash(s) {
+    let h = 2166136261;
+    for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function syllables(w) {
+    const m = w.match(/(ei|ai|au|eu|äu|ie|[aeiouäöüy])/g);
+    return Math.max(1, m ? m.length : 1);
+  }
+
+  const SPECIAL = [
+    { re: /^(komm|kommt|komme|kommen|her|hier|herkommen|hierher|schnell)$/, make: () => ({ kind: "chirp", label: "Mrrrp?" }) },
+    { re: /^(essen|futter|fressen|hunger|hungrig|leckerli|leckerlis|fisch|thunfisch|milch|fertig|mampf)$/, make: () => ({ kind: "meow", label: "Miaaau!", syl: 3 }) },
+    { re: /^(lieb|liebe|liebhab|kuscheln|kuschel|schön|süß|brav|streicheln|schmusen|mag|kuschelig)$/, make: () => ({ kind: "purr", label: "Schnurrr…" }) },
+    { re: /^(hallo|hi|hey|huhu|tschüss|tschüs|morgen|servus|moin)$/, make: () => ({ kind: "chirp", label: "Mrau!" }) },
+    { re: /^(spielen|spiel|ball|maus|fangen)$/, make: () => ({ kind: "chirp", label: "Mrrriau?" }) },
+  ];
+  const WORDS = {
+    1: ["Mau", "Mrrp", "Miu", "Mew"],
+    2: ["Miau", "Mrrau", "Miaou", "Mjau"],
+    3: ["Miiiau", "Mrrriau", "Miaaaou", "Mi-mi-au"],
+  };
+
+  function translate(text) {
+    const parts = text.toLowerCase().match(/[a-zäöüß]+|[?!.]/g) || [];
+    const tokens = [];
+    for (let i = 0; i < parts.length; i++) {
+      const w = parts[i];
+      if (/[?!.]/.test(w)) {
+        if (tokens.length) tokens[tokens.length - 1].punct = w;
+        continue;
+      }
+      const h = hash(w);
+      const sp = SPECIAL.find((s) => s.re.test(w));
+      let t;
+      if (sp) {
+        t = sp.make();
+        t.syl = t.syl || syllables(w);
+      } else {
+        const n = Math.min(3, syllables(w));
+        const list = WORDS[n];
+        t = { kind: n === 1 && h % 3 === 0 ? "chirp" : "meow", label: list[h % list.length], syl: n };
+      }
+      t.h = h;
+      tokens.push(t);
+    }
+    // Ganz ohne Satzzeichen bei "komm" eine Frage-Melodie
+    return tokens;
+  }
+
+  function catText(tokens) {
+    let out = "", newSentence = true;
+    for (const t of tokens) {
+      let l = t.label.replace(/[?!…]+$/, "");
+      if (!newSentence) l = l.charAt(0).toLowerCase() + l.slice(1);
+      out += (out ? " " : "") + l;
+      const end = t.punct || (t.label.match(/[?!…]+$/) || [""])[0];
+      if (end) { out += end === "." ? "!" : end; newSentence = true; } else newSentence = false;
+    }
+    if (out && !/[?!…]$/.test(out)) out += "!";
+    return out;
+  }
+
+  let playing = [];
+  function stopAnim() { playing.forEach(clearTimeout); playing = []; cat.classList.remove("talk"); }
+
+  function play(tokens) {
+    if (!ensureAudio() || !tokens.length) return;
+    stopAnim();
+    const base = VOICES[voice];
+    let t = ctx.currentTime + 0.08;
+    const start = t;
+    tokens.forEach((tk, i) => {
+      const wob = 0.9 + (tk.h % 25) / 100;
+      const isLast = i === tokens.length - 1;
+      const question = tk.punct === "?" || tk.label.endsWith("?");
+      const loud = tk.punct === "!" ? 0.85 : 0.65;
+      let dur;
+      if (tk.kind === "purr") {
+        dur = 1.4;
+        purr(t, dur);
+      } else if (tk.kind === "chirp") {
+        dur = 0.3;
+        meow(t, { dur, f0: base * 1.1 * wob, peak: 1.35, end: question ? 1.6 : 1.3, vol: loud, trill: true });
+      } else {
+        dur = Math.min(1.1, 0.32 + 0.17 * tk.syl);
+        meow(t, { dur, f0: base * wob, peak: 1.45, end: question && isLast ? 1.5 : 0.75, vol: loud });
+      }
+      const delay = (t - start) * 1000;
+      playing.push(setTimeout(() => cat.classList.add("talk"), delay));
+      playing.push(setTimeout(() => cat.classList.remove("talk"), delay + dur * 1000));
+      t += dur + (tk.punct ? 0.35 : 0.12);
+    });
+  }
+
+  let lastTokens = [];
+  function translateAndPlay(text) {
+    text = text.trim();
+    if (!text) return;
+    lastTokens = translate(text);
+    if (!lastTokens.length) return;
+    bubble.textContent = catText(lastTokens);
+    bubble.classList.remove("empty");
+    said.textContent = "Du hast gesagt: „" + text + "“";
+    again.hidden = false;
+    play(lastTokens);
+  }
+
+  // ---------- Bedienung ----------
+  $("form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    ensureAudio();
+    translateAndPlay(textInput.value);
+  });
+  again.addEventListener("click", () => { ensureAudio(); play(lastTokens); });
+  $("quick").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-say]");
+    if (!b) return;
+    ensureAudio();
+    textInput.value = b.dataset.say;
+    translateAndPlay(b.dataset.say);
+  });
+  $("voices").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-voice]");
+    if (!b) return;
+    voice = b.dataset.voice;
+    document.querySelectorAll("#voices .chip").forEach((c) => c.classList.toggle("on", c === b));
+    ensureAudio();
+    if (lastTokens.length) play(lastTokens);
+    else play([{ kind: "meow", label: "Miau", syl: 2, h: 7 }]);
+  });
+
+  // ---------- Mikrofon (Diktat) ----------
+  let dict = null, heard = "";
+  const MSG = {
+    not_granted: "Das Mikrofon ist nicht erlaubt. Du kannst unten schreiben ✏️",
+    dismissed: "Drück nochmal aufs Mikrofon, um es zu erlauben.",
+    rate_limited: "Kurz warten und nochmal probieren 🙂",
+    unavailable: "Das Mikrofon geht hier leider nicht. Schreib unten ✏️",
+  };
+
+  function showNoMic() { $("micArea").hidden = true; $("noMic").hidden = false; }
+
+  mic.addEventListener("click", () => {
+    if (!dict) return;
+    if (dict.active()) { dict.stop().catch(() => {}); return; }
+    heard = "";
+    const p = dict.start(); // direkt im Klick, nichts davor abwarten
+    ensureAudio();
+    p.catch((e) => {
+      const code = e && e.code;
+      if (code === "stopped") return;
+      if (code === "unavailable") { showNoMic(); return; }
+      micLabel.textContent = MSG[code] || "Hoppla, das hat nicht geklappt. Nochmal probieren!";
+    });
+  });
+
+  function setupDictation(d) {
+    dict = d;
+    $("micArea").hidden = false;
+    d.onPartial(({ text }) => {
+      if (text) textInput.value = (heard + text).trim();
+    });
+    d.onFinal(({ text }) => {
+      heard += text;
+      textInput.value = heard.trim();
+    });
+    d.onState(({ state, reason }) => {
+      const on = state !== "idle";
+      mic.classList.toggle("listening", on);
+      mic.textContent = on ? "⏹️" : "🎤";
+      if (state === "starting") micLabel.textContent = "Einen Moment…";
+      else if (state === "listening") micLabel.textContent = "Ich höre zu… Drück nochmal, wenn du fertig bist!";
+      else if (state === "finishing") micLabel.textContent = "Ich übersetze…";
+      else {
+        if (reason === "unavailable") { showNoMic(); return; }
+        micLabel.textContent = MSG[reason] || "Drück aufs Mikrofon und sprich!";
+        if ((reason === "stopped" || reason === "viewer_stopped" || reason === "hidden") && heard.trim()) {
+          translateAndPlay(heard);
+        }
+      }
+    });
+  }
+
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("dictation").then((d) => (d ? setupDictation(d) : showNoMic())).catch(showNoMic);
+  } else {
+    showNoMic();
+  }
+})();
+</script>
+</body>
+</html>
